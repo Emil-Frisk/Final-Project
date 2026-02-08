@@ -1,0 +1,5 @@
+.venv
+__pycache__
+/logs
+/build_udp_socket/build_windows/build
+/build_udp_socket/build_debian/build

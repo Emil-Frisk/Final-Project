@@ -1,0 +1,10 @@
+{
+    "styles": [
+        {
+            "start_up_btn": "QPushButton {\n    background-color: #4CAF50;\n    color: white;\n    border-radius: 5px;\n    padding: 5px;\n}\nQPushButton:hover {\n    background-color: #45a049;\n}\nQPushButton:pressed {\n    background-color: #3d8b40;\n}\nQPushButton:disabled {\n    background-color: #cccccc;\n    color: #666666;\n}"
+        },
+        {
+            "shutdown_btn": "QPushButton {\n    background-color: #f44336;\n    color: white;\n    border-radius: 5px;\n    padding: 5px;\n}\nQPushButton:hover {\n    background-color: #da190b;\n}\nQPushButton:pressed {\n    background-color: #c11300;\n}\nQPushButton:disabled {\n    background-color: #cccccc;\n    color: #666666;\n}"
+        }
+    ]
+}

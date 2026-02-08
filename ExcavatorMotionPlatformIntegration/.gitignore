@@ -1,0 +1,35 @@
+__pycache__
+*.pyc
+*.pyo
+logs
+venv
+.env
+.venv
+Registers data*
+changed_lines*
+.vscode
+src/gui/config.json
+
+# PyInstaller created folders
+build/
+dist/
+
+# Temporary and compiled files
+*.pyc
+__pycache__/
+*.pyz
+*.exe
+*.spec
+
+# Temporary zip files
+*.zip
+test.py
+tmp.txt
+
+# Logs
+*.log
+utils.egg-info
+drr.py
+
+tmp.py
+poweershell.txt

@@ -1,0 +1,11 @@
+adafruit-blinka
+adafruit-circuitpython-lsm6ds
+numpy==2.4.1
+adafruit-circuitpython-ssd1306==2.12.22
+Pillow==12.1.0
+PyYAML==6.0.3
+psutil==7.2.1
+smbus2==0.6.0
+imufusion==1.2.11
+websockets==16.0
+crcmod==1.7

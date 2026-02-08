@@ -1,0 +1,8 @@
+accel_data_rate: 104
+accel_range: 4
+alpha: 0.09
+enable_lpf2: true
+enable_simple_lpf: true
+gyro_data_rate: 208
+gyro_range: 250
+tracking_rate: 101

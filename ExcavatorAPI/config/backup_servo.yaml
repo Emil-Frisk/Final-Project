@@ -1,0 +1,111 @@
+CHANNEL_CONFIGS:
+  lift_boom:
+    affects_pump: true
+    center: 1400
+    deadband_us_neg: 155.0
+    deadband_us_pos: 155.0
+    deadzone: 1.2
+    direction: 1
+    dither_amp_us: 20.0
+    dither_enable: true
+    dither_hz: 15.0
+    gamma: 1.0
+    output_channel: 3
+    pulse_max: 2000
+    pulse_min: 1100
+    ramp_enable: false
+    ramp_limit: 1200.0
+    toggleable: false
+  pump:
+    idle: 0.4
+    multiplier: 0.4
+    output_channel: 15
+    pulse_max: 1600
+    pulse_min: 1000
+  rotate:
+    affects_pump: false
+    center: 1500
+    deadband_us_neg: 45.5
+    deadband_us_pos: 45.5
+    deadzone: 1.0
+    direction: -1
+    dither_amp_us: 15.0
+    dither_enable: false
+    dither_hz: 16.0
+    gamma: 1.0
+    output_channel: 5
+    pulse_max: 1620
+    pulse_min: 1460
+    ramp_enable: false
+    ramp_limit: 100.0
+    toggleable: false
+  scoop:
+    affects_pump: true
+    center: 1500
+    deadband_us_neg: 120.0
+    deadband_us_pos: 120.0
+    deadzone: 1.0
+    direction: -1
+    dither_amp_us: 20.0
+    dither_enable: true
+    dither_hz: 15.0
+    gamma: 1.0
+    output_channel: 2
+    pulse_max: 1900
+    pulse_min: 1100
+    ramp_enable: false
+    ramp_limit: 1000.0
+    toggleable: false
+  tilt_boom:
+    affects_pump: true
+    center: 1500
+    deadband_us_neg: 130.0
+    deadband_us_pos: 130.0
+    deadzone: 1.0
+    direction: 1
+    dither_amp_us: 20.0
+    dither_enable: true
+    dither_hz: 15.0
+    gamma: 1.0
+    output_channel: 4
+    pulse_max: 1900
+    pulse_min: 1100
+    ramp_enable: false
+    ramp_limit: 1000.0
+    toggleable: false
+
+  trackL:
+    affects_pump: False
+    center: 1500
+    deadband_us_neg: 130.0
+    deadband_us_pos: 130.0
+    deadzone: 10
+    direction: -1
+    dither_amp_us: 20.0
+    dither_enable: true
+    dither_hz: 15.0
+    gamma: 1.0
+    output_channel: 7
+    pulse_max: 1700
+    pulse_min: 1000
+    ramp_enable: True
+    ramp_limit: 1000.0
+    toggleable: false
+
+  trackR:
+    affects_pump: False
+    center: 1500
+    deadband_us_neg: 130.0
+    deadband_us_pos: 130.0
+    deadzone: 10
+    direction: 1
+    dither_amp_us: 20.0
+    dither_enable: true
+    dither_hz: 15.0
+    gamma: 1.0
+    output_channel: 6
+    pulse_max: 1700
+    pulse_min: 1000
+    ramp_enable: True
+    ramp_limit: 1000.0
+    toggleable: false

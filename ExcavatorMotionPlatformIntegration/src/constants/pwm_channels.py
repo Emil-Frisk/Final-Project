@@ -1,0 +1,1 @@
+PWM_CHANNELS=["lift_boom","rotate","scoop","tilt_boom","trackL","trackR"]

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+html, #root {
+  width: 100%;
+  height: 100%;
+}
+
+.tihi {
+  /* Image source -> https://unsplash.com/@andyjh07 */
+  background-image: url('/andy-holmes-rCbdp8VCYhQ-unsplash.jpg'); 
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+@keyframes spin-custom {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-excavator {
+  animation: spin-custom 3s linear infinite;
+}
+
+.animate-spin-container {
+  min-height: 100vh;
+  width: 100%;
+}

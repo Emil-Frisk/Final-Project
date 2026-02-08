@@ -1,0 +1,88 @@
+from dataclasses import dataclass
+@dataclass
+class MotorConfig:
+    SLAVE_ID: int = 1
+    
+    ### INPUT EVENTS
+    IEG_MODE_REGISTER: int = 4316
+    IEG_MOTION_REGISTER: int = 4317 # stop 2^2
+
+    ### OUTPUT ADDRESSES
+    OEG_STATUS_REGISTER: int = 104
+    OEG_MOTION_REGISTER: int = 105
+    
+    ### ANALOG POS
+    ANALOG_POSITION_MINIMUM_REGISTER = 7102
+    ANALOG_POSITION_MAXIMUM_REGISTER = 7104
+    ANALOG_VEL_MAXIMUM_REGISTER = 7106
+    ANALOG_ACCELERATION_MAXIMUM_REGISTER = 7108
+    ANALOG_INPUT_CHANNEL_REGISTER = 7101
+    ANALOG_MODBUS_CNTRL_REGISTER = 7188
+    
+    ### HOST POSITION
+    HOST_VEL_MAXIMUM_REGISTER = 4306
+    HOST_POSITION_REGISTER = 4304
+    HOST_ACCELERATION_MAXIMUM_REGISTER = 4308
+    HOST_CURRENT_MAXIMUM_REGISTER = 4310
+ 
+    PFEEDBACK_POSITION_REGISTER = 378
+    IPEAK_REGISTER = 5108
+    RECENT_FAULT_REGISTER: int = 846 #Coms bit 10 -> 2^10
+    PRESENT_FAULT_REGISTER: int = 6 #Coms bit 10 -> 2^10
+    VFEEDBACK_VELOCITY_REGISTER: int = 344
+    SYSTEM_COMMAND_REGISTER: int = 4001
+
+    ### Plimit register
+    PLIMIT_MINUS_REGISTER = 5118
+    PLIMIT_PLUS_REGISTER = 5120
+    PLIMIT_VELOCITY_REGISTER = 5124
+
+    ### Telemetry registers (high)
+    ICONTINUOUS = 564
+    ACTUATOR_TMP = 15
+    BOARD_TMP = 11
+    VBUS = 570 # 11.21
+
+    ### OPERATION MODES
+    COMMAND_MODE = 4303
+    DISABLED = 0
+    DIGITAL_INPUT = 1
+    ANALOG_POSITION_MODE = 2
+    HOST_POSITION_MODE = 5
+    
+    ## Percentile = x - pos_min / (pos_max - pos_min)
+ 
+    
+    ### Register values
+    HOME_VALUE = 256
+    STOP_VALUE = 4
+    RESTART_VALUE = 1
+    RESET_FAULT_VALUE = 32768
+    ENABLE_MAINTAINED_VALUE = 2
+    ### 2 tells the drivers to use simulated analog input
+    ANALOG_MODBUS_CNTRL_VALUE = 2
+
+    ### value limits
+    MODBUSCTRL_MAX = 10000
+    MAX_ACC = 120
+    MAX_VEL = 120 
+    MAX_VEL_REGISTERS_FORMAT = 2560 # for assert(higher register max value (600rpm))
+    MAX_ACC_REGISTERS_FORMAT = 400 # for assert(higher register max value (1500rpm))
+    MIN_VEL = 15
+
+    ### SAFETY POSITION LIMITS
+    ### change w caution 
+    MIN_POS_DECIMAL=25801
+    MIN_POS_WHOLE = 0
+    MAX_POS_WHOLE = 28
+    MAX_POS_DECIMAL = 61406
+    MAX_POS32_DECIMAL = 0.9999847412109375
+    POS_MIN_REVS = 0.393698024
+    POS_MAX_REVS = 28.93700787401574803149606299212
+    
+    ### control
+    DEADBANDREVS = 0.5
+
+    MAX_ANGLE_COMBO = 5.625
+    
+    
