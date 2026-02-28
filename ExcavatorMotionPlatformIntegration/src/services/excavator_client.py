@@ -1,7 +1,6 @@
 import threading
 from time import sleep
 from typing import List
-# from udp_socket import UDPSocket
 from services.udp_socket import UDPSocket
 from utils.utils import ExcavatorAPIProperties
 from utils.utils import setup_logging
@@ -11,9 +10,6 @@ import asyncio
 import logging
 import atexit
 import websockets
-import psutil
-import multiprocessing
-import os
 
 # Maps to which index to read from in the controller loop
 controller_channelname_map={
@@ -248,8 +244,7 @@ class TCPClient:
 
     @client_operation
     def start_mirroring(self, orientation_send_rate=3):
-        float(orientation_send_rate)
-        self.orientation_reading_rate_tmp = orientation_send_rate
+        self.orientation_reading_rate_tmp = float(orientation_send_rate)
         try:
             command={
                 "action": "start_mirroring",
@@ -564,15 +559,18 @@ class TCPClient:
             self.__reset_operation_values()
 
     def stop_current_operation(self):
-        print("\n\n???????????????????????????????????\n\n")
         current_operation=self.get_current_operation()
+        # Inform excavator and cleanup operation locally immediatly
         if current_operation =="driving":
             self.stop_driving()
         elif current_operation=="driving_and_mirroring":
             self.stop_driving_and_mirroring()
+        elif current_operation=="mirroring":
+            self.stop_mirroring()
         else:
             self.logger.error(f"Unkown current operation at stop_current_operation - {current_operation}")
-        
+            return
+        self._cleanup_operation()
 
     async def __start_driving_services(self):
         self.logger.info("Starting driving services...")
@@ -597,6 +595,9 @@ class TCPClient:
                 return False
             self.driving_and_mirroring_starting = True
             self.drive_sending_rate=self.drive_sending_rate_tmp
+
+            
+            self.orientation_reading_rate=self.orientation_reading_rate_tmp
             self.num_outputs=self.num_outputs_tmp
             self.channel_names=self.channel_names_tmp
         try:
@@ -904,11 +905,6 @@ class TCPClient:
                 self.on_excavator_event(event)
         except Exception as e:
             self.logger.error(f"Error in message handler: {e}")
-
-    def __on_udp_srv_closed(self):
-        if not self.client_running: return
-        self.logger.warning("udp server crashed unexpectedly")
-        self._cleanup_operation()
 
     def __reset_operation_values(self):
         with self.data_lock:

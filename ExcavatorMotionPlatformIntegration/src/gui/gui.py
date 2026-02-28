@@ -14,19 +14,22 @@ from pathlib import Path
 from services.process_manager import ProcessManager
 
 class ServerStartupGUI(QWidget):
-    excavator_disconnected = pyqtSignal()
-    excavator_event = pyqtSignal(str)
-    excavator_error = pyqtSignal(str,str)
+    s_excavator_disconnected = pyqtSignal()
+    s_excavator_event = pyqtSignal(str)
+    s_excavator_error = pyqtSignal(str,str)
     
     def __init__(self):
         super().__init__()
         # Connect signal to a slot
-        self.excavator_disconnected.connect(self.on_excavator_disconnected)
-        self.excavator_event.connect(self.on_excavator_event)
-        self.excavator_error.connect(self.on_excavator_error)
+        self.s_excavator_disconnected.connect(self.on_excavator_disconnected)
+        self.s_excavator_event.connect(self.on_excavator_event)
+        self.s_excavator_error.connect(self.on_excavator_error)
+
+        # Excavator client
+        self.excavator_client=None
+        self.excavator_connected=False
         
         self.logger = setup_logging("startup", "startup.log")
-        self.excavator_client=None
         self.process_manager = ProcessManager(logger=self.logger, target_dir=get_current_path(__file__).parent)
         self.setWindowTitle("Server Startup")
         self.setGeometry(100, 100, 400, 600)
@@ -50,6 +53,7 @@ class ServerStartupGUI(QWidget):
 
         # Initialize WebSocket client
         self.websocket_client = WebSocketClient(identity="gui", logger=self.logger, on_message=self.handle_client_message)
+        self.mp_started=False
 
     def start_websocket_client(self):
         """Start the WebSocket client."""
@@ -102,12 +106,14 @@ class ServerStartupGUI(QWidget):
             QMessageBox.information(self, "Info", "fault was cleared successfully")
             self.faults_tab.hide_fault_group()
         elif event == "motors_initialized":
+            self.mp_started=True
             self.shutdown_button.setEnabled(True)
             QMessageBox.information(self, "Info", "Motors have been initialized successfully")
             self.enable_excavator_action_buttons()
         elif event == "connected":
             self.message_label.setText(clientmessage)
         elif event == "shutdown":
+            self.mp_started=False
             asyncio.create_task(self.websocket_client.close())
             QMessageBox.information(self, "Info", "Motors have been shutdown successfully")
             self.shutdown_button.setEnabled(False)
@@ -121,6 +127,7 @@ class ServerStartupGUI(QWidget):
         try:
             self.excavator_client=ExcavatorClient(srv_ip=ip, on_disconnected=self.emit_excavator_disconnected, mpi_enabled=True, on_excavator_event=self.emit_excavator_event, on_excavator_error=self.emit_excavator_error, logging_level="DEBUG") 
             # Excavator Found!
+            self.excavator_connected=True
             if self.excavator_client.start(): 
                 QMessageBox.information(self, "Info", f"Excavator found with ip: {ip}")
                 (ip1, ip2, speed, accel,excavator_ip) = helpers.get_field_values(self)
@@ -139,8 +146,11 @@ class ServerStartupGUI(QWidget):
     def enable_excavator_action_buttons(self):
         """Enables all start action buttons"""
         self.excavator_tab.start_mirroring_btn.setEnabled(True)
+        self.excavator_tab.stop_mirroring_btn.setEnabled(False)
         self.excavator_tab.start_driving_btn.setEnabled(True)
+        self.excavator_tab.stop_driving_btn.setEnabled(False)
         self.excavator_tab.start_driving_and_mirroring_btn.setEnabled(True)
+        self.excavator_tab.stop_driving_and_mirroring_btn.setEnabled(False)
 
     def disable_excavator_action_buttons(self):
         self.excavator_tab.start_mirroring_btn.setEnabled(False)
@@ -152,22 +162,24 @@ class ServerStartupGUI(QWidget):
 
     def emit_excavator_disconnected(self):
         """This will be called from a different thread and needs the use of signal-slot system"""
-        self.excavator_disconnected.emit()
+        self.s_excavator_disconnected.emit()
 
     def emit_excavator_event(self,event):
         """This will be called from a different thread and needs the use of signal-slot system"""
-        self.excavator_event.emit(event)
+        self.s_excavator_event.emit(event)
 
     def emit_excavator_error(self,error_msg,context):
         """This will be called from a different thread and needs the use of signal-slot system"""
-        self.excavator_error.emit(error_msg, context)
+        self.s_excavator_error.emit(error_msg, context)
 
     def on_excavator_disconnected(self):
         """This runs on the main thread"""
+        self.excavator_connected=True
+        self.disable_excavator_action_buttons()
+        self.excavator_tab.find_excavator_btn.setEnabled(True)
         QMessageBox.information(self, "Info", "Excavator connection has been closed")
         self.start_button.setEnabled(False) 
-        self.excavator_tab.find_excavator_btn.setEnabled(True)
-        self.disable_excavator_action_buttons()
+        self.excavator_client.stop_current_operation()
 
     def start_mirroring(self):
         receive_rate=self.excavator_tab.orientation_receive_rate.text().strip()
@@ -203,7 +215,7 @@ class ServerStartupGUI(QWidget):
         
     def stop_mirroring(self):
         self.disable_excavator_action_buttons()
-        self.excavator_client.stop_mirroring()
+        self.excavator_client.stop_current_operation()
 
     def start_driving(self):
         send_rate=self.excavator_tab.commands_send_rate.text().strip()
@@ -223,8 +235,8 @@ class ServerStartupGUI(QWidget):
         self.excavator_client.start_driving(drive_sending_rate=send_rate, channel_names=controllable_chans)
 
     def stop_driving(self):
-        self.disable_excavator_action_buttons()
-        self.excavator_client.stop_driving()
+        self.excavator_tab.stop_driving_btn.setEnabled(False)
+        self.excavator_client.stop_current_operation()
 
     def start_driving_and_mirroring(self):
         receive_rate=self.excavator_tab.orientation_receive_rate.text().strip()
@@ -250,32 +262,39 @@ class ServerStartupGUI(QWidget):
         self.excavator_client.start_driving_and_mirroring(orientation_send_rate=receive_rate, drive_sending_rate=send_rate, channel_names=controllable_chans)
 
     def stop_driving_and_mirroring(self):
-        self.disable_excavator_action_buttons()
-        self.excavator_client.stop_driving_and_mirroring()
+        self.excavator_tab.stop_driving_and_mirroring_btn.setEnabled(False)
+        self.excavator_client.stop_current_operation()
 
     def on_excavator_event(self, event):
-        print(f"event cb: {event}")
+        self.logger.debug(f"event cb: {event}")
         if event=="started_mirroring":
             QMessageBox.information(self, "Info", "Successfully started mirroring operation!")
-            self.excavator_tab.stop_mirroring_btn.setEnabled(True)
+            if self.excavator_connected:
+                self.excavator_tab.stop_mirroring_btn.setEnabled(True)
         elif event == "started_driving":
             QMessageBox.information(self, "Info", "Successfully started driving operation!")
-            self.excavator_tab.stop_driving_btn.setEnabled(True)
+            if self.excavator_connected:
+                self.excavator_tab.stop_driving_btn.setEnabled(True)
         elif event=="started_driving_and_mirroring":
             QMessageBox.information(self, "Info", "Successfully started driving&mirroring operation!")
-            self.excavator_tab.stop_driving_and_mirroring_btn.setEnabled(True)
+            if self.excavator_connected:
+                self.excavator_tab.stop_driving_and_mirroring_btn.setEnabled(True)
         elif event == "stopped_driving":
             QMessageBox.information(self, "Info", "Successfully stopped driving operation!")
-            self.excavator_tab.start_driving_btn.setEnabled(True)
-            self.excavator_tab.stop_driving_btn.setEnabled(False)
+            if self.excavator_connected:
+                if self.mp_started:
+                    self.enable_excavator_action_buttons()
+                else:
+                    self.excavator_tab.start_driving_btn.setEnabled(True)
+                    self.excavator_tab.stop_driving_btn.setEnabled(False)
         elif event=="stopped_driving_and_mirroring":
             QMessageBox.information(self, "Info", "Successfully stopped driving&mirroring operation!")
-            self.excavator_tab.start_driving_and_mirroring_btn.setEnabled(True)
-            self.excavator_tab.stop_driving_and_mirroring_btn.setEnabled(False)
+            if self.excavator_connected:
+                self.enable_excavator_action_buttons()
         elif event=="stopped_mirroring":
             QMessageBox.information(self, "Info", "Successfully stopped mirroring operation!")
-            self.excavator_tab.start_mirroring_btn.setEnabled(True)
-            self.excavator_tab.stop_mirroring_btn.setEnabled(False)
+            if self.excavator_connected:
+                self.enable_excavator_action_buttons()
 
     def on_excavator_error(self, error_msg, context):
         if context=="start_mirroring":
