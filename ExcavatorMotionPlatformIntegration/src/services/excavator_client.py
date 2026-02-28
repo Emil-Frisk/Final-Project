@@ -1,7 +1,9 @@
 import threading
 from time import sleep
 from typing import List
-from services.udp_socket import UDPSocket
+from udp_socket import UDPSocket
+# from services.udp_socket_python import UDPSocket
+from services.service_listener import ServiceListener
 from utils.utils import ExcavatorAPIProperties
 from utils.utils import setup_logging
 from random import uniform
@@ -23,6 +25,7 @@ controller_channelname_map={
 
 ERROR_SIGNAL="^"
 STOP_SIGNAL="*"
+STOP_BUTTON_INDEX=3
 EVENTS={"handshake","screen_message_displayed","configuration","status","started_screen","started_mirroring","started_driving","stopped_driving","stopped_mirroring","started_driving_and_mirroring","stopped_driving_and_mirroring","stopped_screen","error"}
 
 def simulate_joystick_data(channel_names):
@@ -104,6 +107,10 @@ class TCPClient:
         self.num_inputs=0
         self.udp_server_starting=False
         self.udp_server_stopping=False
+        # NOTE: Service listener is atm very tightly coupled with udp_server because it is likely the only service that will be using lower level language, at least for now.
+        self.service_listener=None
+        self.service_listener_thread=None
+        self.service_listener_port=7122
 
         # MPI
         self.mpi=None
@@ -464,7 +471,7 @@ class TCPClient:
                 else:
                     ai_values, di_values = controller.read()
                     # Check for stop button press
-                    if di_values[3] > 0.5:
+                    if di_values[STOP_BUTTON_INDEX] > 0.5:
                         self.logger.info("Controller shutdown button press noticed - cleaning up")
                         cleanup=True
                         break
@@ -491,6 +498,23 @@ class TCPClient:
             if not simulation:
                 controller.close()
             self._cleanup_operation()
+
+    def _start_service_listener(self, service_name):
+        if self.service_listener_thread is None:
+            self.service_listener = ServiceListener(ip="localhost", port=self.service_listener_port, service_name=service_name, cleanup_cb=self._cleanup_operation)
+            self.service_listener_thread = threading.Thread(target=self.service_listener.start, daemon=True)
+            self.service_listener_thread.start()
+            return self.service_listener.wait_for_ready()
+        else:
+            return False
+
+    def _stop_service_listener(self):
+        if self.service_listener_thread is not None:
+            self.service_listener.close(threading.current_thread())
+            if self.service_listener_thread is not None and self.service_listener_thread.is_alive() and self.service_listener_thread != threading.current_thread() :
+                self.service_listener_thread.join(ExcavatorAPIProperties.SHUTDOWN_GRACE_PERIOD)
+            self.service_listener=None
+            self.service_listener_thread=None
 
     def __read_orientation_loop(self):
         try:
@@ -560,7 +584,7 @@ class TCPClient:
 
     def stop_current_operation(self):
         current_operation=self.get_current_operation()
-        # Inform excavator and cleanup operation locally immediatly
+        # Inform excavator and stop the operation locally too
         if current_operation =="driving":
             self.stop_driving()
         elif current_operation=="driving_and_mirroring":
@@ -570,6 +594,7 @@ class TCPClient:
         else:
             self.logger.error(f"Unkown current operation at stop_current_operation - {current_operation}")
             return
+        
         self._cleanup_operation()
 
     async def __start_driving_services(self):
@@ -732,7 +757,8 @@ class TCPClient:
             max_age_seconds = 1
             if self.orientation_reading_rate:
                 max_age_seconds=max(ExcavatorAPIProperties.MAX_NETWORK_TIMEOUT, (1/self.orientation_reading_rate)*8)
-            self.udp_server = UDPSocket(cleanup_callback=self._cleanup_operation, max_age_seconds=max_age_seconds)
+            self.udp_server = UDPSocket(max_age_seconds=max_age_seconds, tcp_port=self.service_listener_port)
+            self._start_service_listener("udp_socket")
             if not self.udp_server.setup(host=self.srv_ip, port=self.srv_port-1, num_inputs=num_inputs, num_outputs=num_outputs, is_server=False):
                 raise RuntimeError("Failed to setup UDP server")
             if not self.udp_server.handshake():
@@ -759,6 +785,7 @@ class TCPClient:
                 return False
             self.udp_server_stopping=True
         try:
+            self._stop_service_listener()
             self.udp_server.close()
             self.udp_server = None
             self.logger.info("UDP server stopped")
@@ -905,6 +932,11 @@ class TCPClient:
                 self.on_excavator_event(event)
         except Exception as e:
             self.logger.error(f"Error in message handler: {e}")
+
+    def __on_udp_srv_closed(self):
+        if not self.client_running: return
+        self.logger.warning("udp server crashed unexpectedly")
+        self._cleanup_operation()
 
     def __reset_operation_values(self):
         with self.data_lock:

@@ -4,6 +4,7 @@ from screen_manager import ScreenManager
 from time import sleep, perf_counter, time
 from dataclasses import asdict
 from inspect import currentframe
+from service_listener import ServiceListener
 from dataclass_types import RenderViewInfo, ExcavatorAPIProperties
 from PCA9685_controller import PWMController, ChannelConfig
 from orientation_tracker import OrientationTracker
@@ -71,8 +72,8 @@ class ExcavatorAPI:
             "status_orientation_tracker": self.status_orientation_tracker,
             "status_udp": self.status_udp
         }
-        
-        self.logger = setup_logging()
+
+        self.logger = setup_logging(logging_level="INFO")
     
         self.excavator_config = ExcavatorAPI.load_config(self.logger)
         self.data_lock = threading.Lock()
@@ -114,6 +115,10 @@ class ExcavatorAPI:
         self.udp_server = None
         self.udp_server_starting = False
         self.udp_server_stopping = False
+        # NOTE: Service listener is atm very tightly coupled with udp_server because it is likely the only service that will be using lower level language, at least for now.
+        self.service_listener=None
+        self.service_listener_thread=None
+        self.service_listener_port=7123
         
         # driving
         self.driving = False
@@ -586,6 +591,23 @@ class ExcavatorAPI:
                 self.orientation_tracker = None
                 self.orientation_tracker_stopping = False
     
+    def _start_service_listener(self, service_name):
+        if self.service_listener_thread is None:
+            self.service_listener = ServiceListener(ip="localhost", port=self.service_listener_port, service_name=service_name, cleanup_cb=self._cleanup_operation)
+            self.service_listener_thread = threading.Thread(target=self.service_listener.start, daemon=True)
+            self.service_listener_thread.start()
+            return self.service_listener.wait_for_ready()
+        else:
+            return False
+    
+    def _stop_service_listener(self):
+        if self.service_listener_thread is not None:
+            self.service_listener.close(threading.current_thread())
+            if self.service_listener_thread is not None and self.service_listener_thread.is_alive() and self.service_listener_thread != threading.current_thread():
+                self.service_listener_thread.join(ExcavatorAPIProperties.SHUTDOWN_GRACE_PERIOD)
+            self.service_listener=None
+            self.service_listener_thread=None
+
     def start_udp_server(self, operation,client_tcp_sck, num_inputs=0, num_outputs=0):
         with self.data_lock:
             if self.udp_server: return True
@@ -595,14 +617,15 @@ class ExcavatorAPI:
             self.udp_server_starting = True
         try:
             error=False
-            max_age_seconds = 1
-            if self.data_receiving_rate:
-                max_age_seconds=max(ExcavatorAPIProperties.MAX_NETWORK_TIMEOUT, (1/self.data_receiving_rate)*12)
-            self.udp_server = UDPSocket(cleanup_callback=self._cleanup_operation, max_age_seconds=max_age_seconds, tcp_server=self.tcp_server)
+            max_age_seconds = 5
+            self._start_service_listener(service_name="udp_socket")
+            self.udp_server = UDPSocket(max_age_seconds=max_age_seconds, tcp_port=self.service_listener_port)
             if not self.udp_server.setup(host="0.0.0.0", port=self.tcp_port-1, num_inputs=num_inputs, num_outputs=num_outputs, is_server=True):
                 raise RuntimeError("Failed to setup UDP server")
             # Inform excavatorClient its time for handshake
             self.tcp_server.send_response(websocket=client_tcp_sck,data={"event":"handshake", "operation": operation})
+            # NOTE: handshake is blocking so sleep a little to let the event for handshake actually get off
+            sleep(1)
             if not self.udp_server.handshake(15):
                 raise RuntimeError("Handshake failed")
             if not self.udp_server.start():
@@ -625,9 +648,8 @@ class ExcavatorAPI:
             if self.udp_server_stopping or self.udp_server_starting:
                 return True
             self.udp_server_stopping = True
-        
         try:
-            # Now close UDP socket
+            self._stop_service_listener()
             self.udp_server.close()
             return True
         except Exception as e:
@@ -848,10 +870,10 @@ class ExcavatorAPI:
     def start_pwm_controller(self):
         try:
             # rate_treshold=self.data_receiving_rate/16 TODO -undo
-            rate_treshold=0
+            rate_treshold=1
             if rate_treshold == 0:
                 self.logger.warning("Input rate treshold too small, monitoring will be disabled.")
-            self.pwm_controller=PWMController(input_rate_threshold=rate_treshold, log_level="DEBUG")
+            self.pwm_controller=PWMController(input_rate_threshold=rate_treshold)
             self.logger.info("Started pwm controller")
             return True
         except Exception as e:
@@ -973,7 +995,7 @@ class ExcavatorAPI:
                     
                     if self.pwm_enabled:
                         self.pwm_controller.update_named(commands=commands, unset_to_zero=True, one_shot_pump_override=False)
-                    self.logger.info(f"Driving commands: {commands}")
+                    self.logger.debug(f"Driving commands: {commands}")
                 sleep(sleep_time)
             self.logger.info("Driving commands receiving loop stopped")
         except Exception as e:
@@ -1122,8 +1144,7 @@ class ExcavatorAPI:
                 if client_tcp_sck:
                     self.tcp_server.send_error(websocket=client_tcp_sck,error_msg=self.format_error_event_response(message="UDP service is shutdown - Start a operation to see the status of it.", context=fun_name))
                 return 
-            # status = status_to_dict(self.udp_server.get_status())
-            status=self.udp_server.get_status()
+            status = status_to_dict(self.udp_server.get_status())
             if client_tcp_sck:
                 self.tcp_server.send_response(websocket=client_tcp_sck,data={"event":"status", "status": status, "target":"udp"})
             self.logger.info(f"Mirroring operations current status: {status}")
@@ -1191,6 +1212,7 @@ class ExcavatorAPI:
     @staticmethod
     def load_config(logger=None):
         config_path = get_entry_point() / "config" / ExcavatorAPI.CONFIG_FILE_NAME
+        # config_path = Path().home() / "excavator" / "config" / ExcavatorAPI.CONFIG_FILE_NAME # TODO - undo
 
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{ExcavatorAPI.CONFIG_FILE_NAME}' not found. Full path: {config_path}")
