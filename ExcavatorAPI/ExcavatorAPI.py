@@ -12,7 +12,7 @@ from pathlib import Path
 import json
 import yaml
 from udp_socket import UDPSocket
-from utils import setup_logging, get_cpu_core_usage, get_cpu_temperature
+from utils import setup_logging, get_cpu_core_usage, get_cpu_temperature, get_entry_point
 
 def status_to_dict(status):
     """Convert UDPSocket::Status object to a JSON-serializable dictionary"""
@@ -108,7 +108,7 @@ class ExcavatorAPI:
         self.mirroring_starting = False
         self.mirroring_stopping = False
         self.orientation_sending_thread = None
-        self.data_sending_rate=None
+        self.data_sending_rate=None # TODO - os KILL EI TOIMI SAMALLA LAILLA takes 2 args:?
         
         # UDP socket (this is only for mirroring action for now atleast)
         self.udp_server = None
@@ -189,7 +189,7 @@ class ExcavatorAPI:
                 return
             self.screen_config_reserved=True
         try:
-            cfg = ScreenManager.load_config()
+            cfg = ScreenManager.load_config() # TODO - investigate
             if client_tcp_sck:
                 data=self._format_configuration_response(cfg=cfg,target="screen",context="get_config")
                 self.tcp_server.send_response(websocket=client_tcp_sck,data=data)
@@ -847,6 +847,7 @@ class ExcavatorAPI:
 
     def start_pwm_controller(self):
         try:
+            # rate_treshold=self.data_receiving_rate/16 TODO -undo
             rate_treshold=0
             if rate_treshold == 0:
                 self.logger.warning("Input rate treshold too small, monitoring will be disabled.")
@@ -1189,7 +1190,7 @@ class ExcavatorAPI:
     
     @staticmethod
     def load_config(logger=None):
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / ExcavatorAPI.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / ExcavatorAPI.CONFIG_FILE_NAME
 
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{ExcavatorAPI.CONFIG_FILE_NAME}' not found. Full path: {config_path}")
@@ -1204,7 +1205,7 @@ class ExcavatorAPI:
 
     @staticmethod
     def update_config(config):
-        config_path=Path("/home") / "savonia" / "excavator" / "config" / ExcavatorAPI.CONFIG_FILE_NAME
+        config_path= get_entry_point() / "config" / ExcavatorAPI.CONFIG_FILE_NAME
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{ExcavatorAPI.CONFIG_FILE_NAME}' not found. Full path: {config_path}")
         

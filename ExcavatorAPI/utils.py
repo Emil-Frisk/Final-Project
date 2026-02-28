@@ -3,13 +3,17 @@ import psutil
 import logging
 from pathlib import Path
 import math
+import sys
 from logging.handlers import RotatingFileHandler
+
+def get_entry_point() -> str:
+    return Path(sys.argv[0]).resolve().parent
 
 def setup_logging(filename="ExcavatorAPI.log", logging_level="INFO", log_to_file=True, process_name="excavator"):
     if not ".log" in filename: 
         filename += ".log"
     
-    parent_log_dir = Path("/home") / "savonia" / "excavator" / "logs"
+    parent_log_dir = get_entry_point() / "logs"
     parent_log_dir.mkdir(parents=True, exist_ok=True)
     
     # Create a unique logger name per process

@@ -1,3 +1,7 @@
+# ============================================================================
+# Credit: https://github.com/AI-MaSi
+# ============================================================================
+
 """
 Valve testing PWM controller with:
 - Derived PWM period from actual PCA9685 frequency
@@ -24,7 +28,7 @@ import busio
 import os
 import psutil
 import multiprocessing
-from utils import setup_logging
+from utils import setup_logging, get_entry_point
 
 
 # ============================================================================
@@ -329,7 +333,7 @@ class PWMController:
     @staticmethod
     def load_config(return_as_dict=True):
         """Loads config from a file without needing to create an instance"""
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / PWMController.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / PWMController.CONFIG_FILE_NAME
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{PWMController.CONFIG_FILE_NAME}' not found")
         with open(config_path, 'r') as f:
@@ -392,7 +396,7 @@ class PWMController:
         return None if value in none_values else value
 
     @staticmethod
-    def validate_config(pump_config=None, channel_configs=None):
+    def validate_config(pump_config=None, channel_configs=None): # TODO -fix lift boom err msg
         errors = []
         used_outputs = {}
         if channel_configs != None:
@@ -462,7 +466,7 @@ class PWMController:
 
     @staticmethod
     def update_config(config):
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / PWMController.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / PWMController.CONFIG_FILE_NAME
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{PWMController.CONFIG_FILE_NAME}' not found")
         with open(config_path, 'w') as f:
@@ -536,9 +540,6 @@ class PWMController:
 
     def update_named(self, commands: Dict[str, float], *, unset_to_zero: Optional[bool] = None,
                      one_shot_pump_override: bool = True):
-        print("### DEBUG UPDATE NAMED ###")
-        print(f"received commands: {commands}")
-        print(f"is safe state: {self.is_safe_state}")
         if not self.skip_rate_checking:
             self.input_event.set()
             if not self.is_safe_state:

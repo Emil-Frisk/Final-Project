@@ -12,7 +12,7 @@ from math import ceil
 from collections import deque
 import yaml
 from pathlib import Path
-from utils import setup_logging, get_cpu_temperature
+from utils import setup_logging, get_cpu_temperature, get_entry_point
 
 @dataclass
 class RenderViewInfo:
@@ -104,7 +104,7 @@ def draw_wifi_signal(draw, rssi, x, y):
 # Can only realistically display 3 lines of text in the body section 
 # without wrapping, which is roughly 60 characters
 class ScreenManager: 
-    FONT_PATH = Path("/home") / "savonia" / "excavator" / 'Montserrat-VariableFont_wght.ttf'
+    FONT_PATH = get_entry_point() / 'Montserrat-VariableFont_wght.ttf'
     CONFIG_FILE_NAME = "screen_config.yaml"
     RENDERQ_BUFFER_SIZE = 100
     def __init__(self, cleanup_callback=None,width=128, height=64, padding=2):
@@ -231,7 +231,7 @@ class ScreenManager:
         self.oled.image(image)
         self.oled.show()
     
-    def set_default_render_time(self, duration):
+    def set_default_render_time(self, duration): # TODO - muuta fontit käyttämään configia...
         if (not isinstance(duration, float) and not isinstance(duration, int)) or duration <= 0:
             raise ValueError("set_default_render_time: duration is invalid")
         self.config["render_time"]=duration
@@ -380,7 +380,7 @@ class ScreenManager:
     
     @staticmethod
     def load_config(logger=None):
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / ScreenManager.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / ScreenManager.CONFIG_FILE_NAME
 
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{ScreenManager.CONFIG_FILE_NAME}' not found")
@@ -419,7 +419,7 @@ class ScreenManager:
     
     @staticmethod
     def update_config(config):
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / ScreenManager.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / ScreenManager.CONFIG_FILE_NAME
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{ScreenManager.CONFIG_FILE_NAME}' not found")
         with open(config_path, 'w') as f:

@@ -1,3 +1,7 @@
+# ============================================================================
+# Credit: https://github.com/AI-MaSi
+# ============================================================================
+
 import socket
 import struct
 import threading
@@ -246,8 +250,8 @@ class UDPSocket:
         if not self._start_receiving():
             raise RuntimeError("Failed to start receiving")
         self.latest_timestamp = time.time()
-        # Only start heartbeat monitor if we are actually expecting something
-        if self.num_inputs > 0:
+      #  Only start heartbeat monitor if we are actually expecting something
+        if self.num_inputs > 0: #TODO - temporaralily of ffor debugging...
             if not self._start_heartbeat():
                 raise RuntimeError("Failed to start heartbeat monitoring")
         self.logger.info("UDPSocket service has been started")
@@ -357,9 +361,6 @@ class UDPSocket:
                 continue  # Normal timeout, keep trying
             except Exception as e:
                 self.logger.error(f"Error occured in receive loop: {e}")
-                print(f"struct.calcsize(self.recv_format) AGAIN: {struct.calcsize(self.recv_format)}")
-                print(f"self.recv_format value AGAIN: {repr(self.recv_format)}")
-                print(f"id(self.recv_format): {id(self.recv_format)}")
                 self.close_connection()
                 if self.cleanup_callback:
                     self.cleanup_callback()

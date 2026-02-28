@@ -10,7 +10,7 @@ import numpy as np
 from pathlib import Path
 import yaml
 from dataclass_types import ExcavatorAPIProperties
-from utils import setup_logging
+from utils import setup_logging, get_entry_point
 
 # NOTE: ExcavatorAPI is responsible for cleaning up with
 # cleanup_callback on unexpected thread crashes
@@ -134,6 +134,7 @@ class OrientationTracker:
             6666:  Rate.RATE_6_66K_HZ
         }
         
+        # TODO - make the seleciton of the bus through parameter
         self.bus = SMBus(1)
         
         # data rates
@@ -393,7 +394,7 @@ class OrientationTracker:
 
     @staticmethod
     def load_config(logger=None): # NOTE: script will have to be ran as root so home path is hardcoded for now
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / OrientationTracker.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / OrientationTracker.CONFIG_FILE_NAME
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{OrientationTracker.CONFIG_FILE_NAME}' not found")
         with open(config_path, 'r') as f:
@@ -447,7 +448,7 @@ class OrientationTracker:
         
     @staticmethod
     def update_config(config):
-        config_path = Path("/home") / "savonia" / "excavator" / "config" / OrientationTracker.CONFIG_FILE_NAME
+        config_path = get_entry_point() / "config" / OrientationTracker.CONFIG_FILE_NAME
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file '{OrientationTracker.CONFIG_FILE_NAME}' not found")
         
