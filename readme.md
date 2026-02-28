@@ -13,3 +13,6 @@ There was also a motion platform that can be controller with this [API](https://
 The end goal was to install this [IMU](https://www.adafruit.com/product/4503) sensor on top of the excavator and mirror its orientation with the motion platform while remote driving it with the motion platforms controller.
 
 You can see the final result [here](https://youtu.be/n0L2oRUeU-k).
+
+# Advanced Branch
+Advanced branch has implementation where UDPSocket has been done with c++ instead. BuildUDPSocket folder has build build details. C++ implementation is 100x faster ~110 microseconds.
