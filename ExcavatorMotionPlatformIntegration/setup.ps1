@@ -20,5 +20,6 @@ pip.exe install -e .
 Write-Host "All local modules installed!"
 
 Write-Host "All ready to go!"
-Write-Host "Press enter to exit the setup script!"
+Write-Host "execute run_after_setup_bat.bat to launch up the application"
+Write-Host "Press enter to quit the setup script!"
 Read-Host
