@@ -24,12 +24,12 @@ class ExcavatorTab(QWidget):
         
         # How fast the excavator will send orientation information
         self.orientation_receive_rate = QLineEdit()
-        self.orientation_receive_rate.setText("1")
+        self.orientation_receive_rate.setText("15")
         self.layout.addRow("Orientation Receive Rate", self.orientation_receive_rate)
 
         # How fast the excavator client will send control commands
         self.commands_send_rate = QLineEdit()
-        self.commands_send_rate.setText("10")
+        self.commands_send_rate.setText("15")
         self.layout.addRow("Control Commands Send Rate", self.commands_send_rate)
 
         # Channel control selection

@@ -8,3 +8,7 @@ The GUI through which you open the motion platform server has been extended by a
 The integration simply adds the ExcavatorClient service into the mix and it uses the MPI service to rotate the platform.
 
 ![New GUI Architecture](./documentation/images/Arch.PNG)
+
+## Install
+* Run setup.bat
+* Run run_aafter_setup_bat.bat
