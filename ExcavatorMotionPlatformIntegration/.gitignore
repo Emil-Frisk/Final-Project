@@ -8,7 +8,6 @@ venv
 Registers data*
 changed_lines*
 .vscode
-src/gui/config.json
 
 # PyInstaller created folders
 build/
