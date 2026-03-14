@@ -33,3 +33,6 @@ The Actions component will let you perform actions for the excavator through but
 * React
 * Vite
 * Tailwind CSS
+
+## Updating the website
+Just do your changes locally and run npm run dev at the root directory and the new build will be in the dist folder.
