@@ -1,4 +1,5 @@
 adafruit-blinka
+adafruit-circuitpython-pca9685
 adafruit-circuitpython-lsm6ds
 numpy==2.4.1
 adafruit-circuitpython-ssd1306==2.12.22
