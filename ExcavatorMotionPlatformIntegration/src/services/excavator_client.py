@@ -28,7 +28,7 @@ EVENTS={"handshake","screen_message_displayed","configuration","status","started
 def simulate_joystick_data(channel_names):
     inputs = []
     deadzone=0.2
-    for i in range(4):
+    for i in range(len(channel_names)):
         new_val=uniform(-1, 1)
         if not (abs(new_val) > deadzone):
             new_val=0
