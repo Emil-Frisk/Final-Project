@@ -30,7 +30,8 @@ class ServerStartupGUI(QWidget):
         self.excavator_connected=False
         
         self.logger = setup_logging("startup", "startup.log")
-        self.process_manager = ProcessManager(logger=self.logger, target_dir=get_current_path(__file__).parent)
+        self.src_dir=get_entry_point().parent.parent
+        self.process_manager = ProcessManager(logger=self.logger, target_dir=self.src_dir)
         self.setWindowTitle("Server Startup")
         self.setGeometry(100, 100, 400, 600)
         self.path = get_entry_point().parent

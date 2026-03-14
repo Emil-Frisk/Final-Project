@@ -448,6 +448,7 @@ class TCPClient:
     def __drive_commands_loop(self):
         try:
             cleanup=False
+            simulation=True
             sleep_time=1/self.drive_sending_rate
             self.__validate_rate(rate=self.drive_sending_rate, context="drive sending rate")
             self.logger.info(f"drive_commands_loop started. Sleep time: {sleep_time}")
