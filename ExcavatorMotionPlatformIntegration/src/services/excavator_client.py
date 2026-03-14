@@ -34,12 +34,8 @@ def simulate_joystick_data(channel_names):
             new_val=0
         inputs.append(new_val)
 
-    mapped_inputs=[]
-    for channel_name in channel_names:
-        mapped_inputs.append(inputs[controller_channelname_map[channel_name]])
-    return mapped_inputs
-
-
+    # NOTE: don't need to map anything for simulated values
+    return inputs
 
 def client_operation(func):
     def wrapper(self, *args, **kwargs):
