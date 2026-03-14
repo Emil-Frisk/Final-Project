@@ -4,3 +4,4 @@ PyQt6==6.8.1
 qasync
 websockets
 crcmod
+nidaqmx
