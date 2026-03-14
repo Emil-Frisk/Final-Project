@@ -86,5 +86,9 @@ ExcavatorClients purpose is to hide away all the cooridnation with the Excavator
 ## ExcavatorAPI Tester Agent
 There is a agent file that tries to use all the actions ExcavatorAPI has to offer and report if they were succesful or not.
 
+## Install
+Just clone the repository from a minuature excavator in a desired directory and execute setup.sh
+
+
 
 
